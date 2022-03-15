@@ -1,0 +1,12 @@
+manage_network: false
+keystore_path: /tmp/keystore
+plugin: ./plugins/vault_plugin/vault_plugin.so
+plugin_config_file_path: /etc/secret
+plugin_config_vault_address: https://localhost:8200
+plugin_config_vault_storage_path: kv/data/luks/
+plugin_config_vault_role_id: roleIDexample
+plugin_config_vault_secret_id: secretIDexample
+plugin_config_vault_skip_verify: true
+plugin_config_server_id: testnode
+dm_tune_drives:
+  - sda

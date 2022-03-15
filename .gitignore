@@ -1,0 +1,3 @@
+*.so
+authorized_keys
+private.key

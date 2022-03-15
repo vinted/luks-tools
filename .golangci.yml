@@ -1,0 +1,5 @@
+issues:
+  exclude-rules:
+  - path: plugins/
+    linters:
+    - deadcode
