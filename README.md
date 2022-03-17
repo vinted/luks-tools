@@ -28,18 +28,20 @@ file containing secret string.
 
 Takes folowing configuration parameters:
 
-`plugin_config_vault_address`
-`plugin_config_vault_storage_path`
-`plugin_config_vault_role_id`
-`plugin_config_vault_secret_id`
+`plugin_config_vault_address`  
+`plugin_config_vault_storage_path`  
+`plugin_config_vault_role_id`  
+`plugin_config_vault_secret_id`  
 `plugin_config_vault_skip_verify` - disables Vault certificate check.
 `plugin_config_server_id` - unique keyname where servers key is stored.
 
 ## dmtune
 
-Tool is designed to tune device mapper parameters to increase performance for SSD drives.
-To enable `allow_discards no_read_workqueue no_write_workqueue` parameters on drive, execute:
-`dmtune DM_DEVICE_NAME`
+Tool is designed to tune device mapper parameters to increase performance for SSD drives.  
+To enable `allow_discards no_read_workqueue no_write_workqueue` parameters on drive, execute:  
+```
+dmtune DM_DEVICE_NAME
+```
 List of DM devices enabled for tuning should be defined in config.yml file:
 ```
 dm_tune_drives:
@@ -51,28 +53,31 @@ Refs: https://blog.cloudflare.com/speeding-up-linux-disk-encryption/
 
 ## kdump-collector
 
-Acts as SSH server. Uploads received files (via pipe or SCP) to S3 endpoint.
+Service is designed to act as remote receiver of kernel core dumps and logs (kdump kernel is not capable of storing crashdump on encrypted filesystem).  
+Acts as SSH server.
+Stores received files (via SSH pipe or SCP) to S3 object store.  
+Adds additional layer of security, as there is no way to retrieve core files via ssh, only to store them.
 
 Configuration is done via env variables:
 
 `KDUMP_STRIP_FROM_NAME` - removes string from beginning of the upload path. Upload path is used to
 build bucket name in s3. Normally `kdump` uploads crashdumps to `/var/crash/hostname-date/`.
-`/var/crash` is not unique, so can be omitted.
+`/var/crash` is not unique, so can be omitted.  
 default: `/var/crash/`
 
-`KDUMP_SSH_AUTHORIZED_KEYS_FILE` path to authorized_keys file.
+`KDUMP_SSH_AUTHORIZED_KEYS_FILE` path to authorized_keys file.  
 default: `authorized_keys`
 
-`KDUMP_SSH_PRIVATE_KEY_FILE` path to SSH private key file.
+`KDUMP_SSH_PRIVATE_KEY_FILE` path to SSH private key file.  
 default: `private.key`
 
-`KDUMP_SSH_BIND_ADDRESS` bind address for `kdump-collector` SSH service.
+`KDUMP_SSH_BIND_ADDRESS` bind address for `kdump-collector` SSH service.  
 default: `0.0.0.0:22`
 
-`KDUMP_S3_CHUNK_SIZE` chunk size for S3 uploads. Files, bigger than chunk size will be uploaded via multipart upload.
+`KDUMP_S3_CHUNK_SIZE` chunk size for S3 uploads. Files, bigger than chunk size will be uploaded via multipart upload.  
 default: `536870912` (512MB)
 
-`KDUMP_READ_BUFF_SIZE` buffer size for ssh channel reads.
+`KDUMP_READ_BUFF_SIZE` buffer size for ssh channel reads.  
 default: `1024`
 
 `KDUMP_S3_ACCESS_KEY_ID` S3 access key id.
@@ -81,8 +86,8 @@ default: `1024`
 
 `KDUMP_S3_ENDPOINT` S3 endpoint.
 
-`KDUMP_S3_EREGION` S3 region.
+`KDUMP_S3_EREGION` S3 region.  
 default: `us-east-1`
 
-`KDUMP_S3_FORCE_PATH_STYLE` Enable path-style S3 URLs.
+`KDUMP_S3_FORCE_PATH_STYLE` Enable path-style S3 URLs.  
 default: `true`
