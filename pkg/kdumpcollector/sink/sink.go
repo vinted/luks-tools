@@ -88,7 +88,9 @@ func StartSSHServer() error {
 			return err
 		}
 		_, chans, reqs, err := ssh.NewServerConn(tcpConn, sshConfig)
-		if err != nil {
+		// do not log EOF errors, as they most probably are caused by portscan
+		// or heartbeats.
+		if err != nil && err != io.EOF {
 			log.Error(err)
 		}
 		go ssh.DiscardRequests(reqs)

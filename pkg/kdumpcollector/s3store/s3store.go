@@ -230,7 +230,6 @@ func (s awsS3) uploadPart(multipartData *s3.CreateMultipartUploadOutput, part in
 		ETag:       result.ETag,
 		PartNumber: aws.Int64(int64(part)),
 	}
-	log.Info(uploadResult)
 	return uploadResult, nil
 }
 
