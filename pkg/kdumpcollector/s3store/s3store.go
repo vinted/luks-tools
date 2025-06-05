@@ -2,6 +2,13 @@ package s3store
 
 import (
 	"bytes"
+	"io"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -10,12 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	log "github.com/sirupsen/logrus"
 	"github.com/vinted/luks-tools/pkg/kdumpcollector/config"
-	"io"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type FileInfo struct {
@@ -43,6 +44,7 @@ func getFileInfo(payload []byte, fileSize int64) FileInfo {
 	fileinfo.Bucket = strings.Replace(fileinfo.Bucket, ".", "-", -1)
 	fileinfo.Bucket = strings.Replace(fileinfo.Bucket, ":", "-", -1)
 	fileinfo.Name = strings.Replace(filepath.Base(fileinfo.Name), "/", "", -1)
+	fileinfo.Name = strings.Replace(filepath.Base(fileinfo.Name), "'", "", -1)
 	if len(fileinfo.Bucket) == 0 || fileinfo.Bucket == "-" {
 		fileinfo.Bucket = strconv.FormatInt(time.Now().UTC().Unix(), 10)
 	}
