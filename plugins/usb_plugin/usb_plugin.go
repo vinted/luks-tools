@@ -44,12 +44,15 @@ func GetKey() (string, error) {
 					break
 				}
 			}
+			err = unmountVolume()
+			if err != nil {
+				log.Error("Error unmounting volume: ", err)
+			}
 		}
 
 	}
-	cmd := exec.Command("umount", "/tmp/luks-tools")
-	_, err = cmd.Output()
 
+	err = unmountVolume()
 	if err != nil {
 		log.Error("Error unmounting volume: ", err)
 	}
@@ -59,4 +62,11 @@ func GetKey() (string, error) {
 		log.Error("Error removing directory: ", err)
 	}
 	return string(content), err
+}
+
+func unmountVolume() error {
+	cmd := exec.Command("umount", "/tmp/luks-tools")
+	_, err := cmd.Output()
+
+	return err
 }
