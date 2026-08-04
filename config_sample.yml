@@ -1,4 +1,5 @@
 manage_network: false
+wait_for_network: 5s
 keystore_path: /tmp/keystore
 plugin: ./plugins/vault_plugin/vault_plugin.so
 plugin_config_file_path: /etc/secret
