@@ -24,7 +24,7 @@ plugin_config_file_path: path
 `plugin_config_file_path` - parameters starting with `plugin_config_` should be used to configure   plugin itself. `plugin_config_file_path` is specific to `file_plugin` and defines full path to
 file containing secret string.
 
-`wait_for_network` - specifies how long to wait for DHCP configuration before accessing network resources.
+`wait_for_network` - specifies how long to wait for interface drivers/devices to appear before bringing interfaces up and starting DHCP.
 
 
 ## vault plugins
