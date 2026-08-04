@@ -1,10 +1,14 @@
 package network
 
 import (
-	log "github.com/sirupsen/logrus"
+	"bytes"
 	"net"
 	"os/exec"
 	"time"
+
+	"github.com/vinted/luks-tools/pkg/config"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func Down() {
@@ -18,6 +22,10 @@ func Down() {
 		log.Error(err)
 	}
 	for _, iface := range interfaces {
+		// Skip non-ethernet devices
+		if len(iface.HardwareAddr) != 6 {
+			continue
+		}
 		log.Info("Removing configuration from ", iface.Name)
 		err := exec.Command("ip", "addr", "flush", "dev", iface.Name).Run()
 		if err != nil {
@@ -34,31 +42,54 @@ func Down() {
 	}
 }
 
-func Up() {
+func Up(cfg config.Cfg) {
 	log.Info("Bringing network up")
-	startDHCPClient()
+	startDHCPClient(cfg)
 }
 
-func startDHCPClient() {
+func startDHCPClient(cfg config.Cfg) {
+	args := []string{
+		"-sf", "/usr/sbin/luks-dhcp.sh",
+	}
 	// Wait for network drivers to load
 	log.Info("Waiting for interface drivers to load")
-	time.Sleep(3 * time.Second)
+	d, err := time.ParseDuration(cfg.WaitForNetwork)
+	if err != nil {
+		log.Error(err)
+	}
+	time.Sleep(d)
 
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		log.Error(err)
 	}
 	for _, iface := range interfaces {
+		// Skip non-ethernet devices
+		if len(iface.HardwareAddr) != 6 {
+			continue
+		}
+		args = append(args, iface.Name)
 		err := exec.Command("ip", "link", "set", iface.Name, "up").Run()
 		if err != nil {
 			log.Error(err)
 		}
 	}
-	err = exec.Command("dhclient", "-sf", "/usr/sbin/luks-dhcp.sh").Run()
+
+	cmd := exec.Command("dhclient", args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+
 	if err != nil {
-		log.Error("DHCP client failed. Got error: ", err)
+		if _, ok := err.(*exec.ExitError); ok {
+			log.Error(stderr.String())
+		} else {
+			log.Info(stdout.String())
+		}
 	}
 
 	// Sleep for 5 seconds for network to be really up
+	log.Info("Sleeping 5s")
 	time.Sleep(5 * time.Second)
 }

@@ -1,15 +1,17 @@
 package config
 
 import (
+	"io/ioutil"
+
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 type Cfg struct {
-	ManageNetwork bool   `yaml:"manage_network"`
-	KeystorePath  string `yaml:"keystore_path"`
-	Plugin        string `yaml:"plugin"`
+	ManageNetwork  bool   `yaml:"manage_network"`
+	WaitForNetwork string `yaml:"wait_for_network"`
+	KeystorePath   string `yaml:"keystore_path"`
+	Plugin         string `yaml:"plugin"`
 }
 
 func ParseConfig() (Cfg, error) {
@@ -25,6 +27,9 @@ func ParseConfig() (Cfg, error) {
 	if err != nil {
 		log.Error("Error parsing config yaml", err)
 		return cfg, err
+	}
+	if cfg.WaitForNetwork == "" {
+		cfg.WaitForNetwork = "5s"
 	}
 	return cfg, nil
 }

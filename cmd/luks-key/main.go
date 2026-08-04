@@ -1,13 +1,14 @@
 package main
 
 import (
+	"os"
+	"plugin"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/vinted/luks-tools/pkg/config"
 	"github.com/vinted/luks-tools/pkg/keyfile"
 	"github.com/vinted/luks-tools/pkg/keystore"
 	"github.com/vinted/luks-tools/pkg/network"
-	"os"
-	"plugin"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 	log.Info("Using plugin: ", cfg.Plugin)
 
 	if cfg.ManageNetwork {
-		network.Up()
+		network.Up(cfg)
 	}
 
 	var plug *plugin.Plugin
