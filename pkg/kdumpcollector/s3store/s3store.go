@@ -2,6 +2,7 @@ package s3store
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"path/filepath"
 	"regexp"
@@ -83,38 +84,40 @@ func (s3Client awsS3) uploader(channel io.Reader, payload []byte, fileSize int64
 	for {
 		var content []byte
 		for dataChunkSize < s3ChunkSize {
+			if fileInfo.SinkSCP && fileSize == currentSize {
+				// scp does not close channel upon completing - it must read exact number of bytes
+				// that was anounced before starting data transfer.
+				streamFinished = true
+				log.Info("Last Byte reached")
+				break
+			}
 			buf := make([]byte, bufSize)
 			if fileInfo.SinkSCP {
 				// this concerns scp sink chanel only
 				bytesLeft := fileSize - currentSize
 				if bytesLeft < int64(bufSize) {
-					log.Info("Shrinking buffer to ", bytesLeft)
-					// scp does not close channel upon completing - it must read exact number of bytes
-					// that was anounced before starting data transfer. thus we need to read precise number
-					// of bytes with last read.
-					bufSize = int(bytesLeft)
-					buf = make([]byte, bufSize)
+					// never read past the announced file size, the rest of the
+					// stream belongs to the scp protocol.
+					buf = buf[:bytesLeft]
 				}
 			}
 			bytesRead, err := channel.Read(buf)
+			// Read may return less than len(buf) bytes, keep only what was read
+			content = append(content, buf[:bytesRead]...)
+			dataChunkSize += int64(bytesRead)
+			currentSize += int64(bytesRead)
 			if err == io.EOF {
+				if fileInfo.SinkSCP && currentSize != fileSize {
+					s3Client.abortOnError(multipartUploadOutput)
+					return fmt.Errorf("unexpected EOF: got %d of %d bytes", currentSize, fileSize)
+				}
 				streamFinished = true
 				log.Info("EOF reached")
 				break
 			}
-			if fileInfo.SinkSSH && bytesRead < bufSize {
-				// this concerns ssh sink channel only.
-				// there may be bytes less than buffSize left on channel.
-				// We need to remove trailing zeros from buffer if this happens.
-				buf = buf[:bytesRead]
-			}
-			content = append(content, buf...)
-			dataChunkSize += int64(len(buf))
-			currentSize += int64(len(buf))
-			if fileSize == currentSize {
-				streamFinished = true
-				log.Info("Last Byte reached")
-				break
+			if err != nil {
+				s3Client.abortOnError(multipartUploadOutput)
+				return err
 			}
 		}
 		if streamFinished {
@@ -258,6 +261,16 @@ func (s awsS3) abortMultipartUpload(multipartData *s3.CreateMultipartUploadOutpu
 	}
 	_, err := s.svc.AbortMultipartUpload(input)
 	return err
+}
+
+func (s awsS3) abortOnError(multipartData *s3.CreateMultipartUploadOutput) {
+	if multipartData == nil {
+		return
+	}
+	err := s.abortMultipartUpload(multipartData)
+	if err != nil {
+		log.Error("Multipart abort failed. ", err)
+	}
 }
 
 func (s awsS3) createBucket(bucketName string) error {
